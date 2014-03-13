@@ -13,16 +13,20 @@ public class Main
 {
 	private static BufferedImage img;
 	private static Robot robot;
+	private static int retry;
+	private static boolean error;
 	
 	public static void main(String[] argv)
 	{
+		retry = 0;
+		error = false;
 		try 
 		{
 			robot = new Robot();
 			Thread.sleep(3000);
 			while (true)
 			{
-				Thread.sleep(350);
+				Thread.sleep(370);
 				next();				
 			}
 		} 
@@ -34,12 +38,28 @@ public class Main
 	
 	private static void next()
 	{
-
+		if (retry != 0)
+		{
+			System.out.println("retry:" + retry);
+		}
+ 		if (retry > 10)
+ 		{
+ 			System.exit(1);
+ 		}
+ 		
 		Rectangle rect = new Rectangle(715, 335, 485, 485);
 		img = robot.createScreenCapture(rect);
 		//saveImg();
-
-		Board b = new Board(4);
+		if (gameover())
+		{
+	 		int key = KeyEvent.VK_SPACE;
+	 		System.out.println("Failed again...");
+			robot.keyPress(key);
+			robot.keyRelease(key);
+			return;
+		}
+		
+		Board b = new Board(0);
 
 		
 		for(int i = 0; i < 4; i++)
@@ -49,13 +69,22 @@ public class Main
 				b.set(i, j, getValue(i, j));
 			}
 		}
-		
-		//b.print();
-		//System.out.println(b.score());
- 		//System.exit(1);
+
+		if (error == true)
+		{
+			retry++;
+			error = false;
+			return;
+		}
+
+		b.setValue();
+
+//		b.print();
+//		System.out.println(b.score());
+// 		System.exit(1);
  		
 		int move = b.move();
-		//move = -2;
+// 		System.exit(1);
 		int key;
 		
 		switch (move)
@@ -74,16 +103,26 @@ public class Main
 		 		break;
 		 	default:
 		 		System.out.println("Something went wrong...");
-		 		System.exit(1);
+		 		retry++;
 		 		return;		
 		}
 		
 		robot.keyPress(key);
 		robot.keyRelease(key);
-		
+		retry = 0;
+		error = false;
 		//b.print();
 	}
 	
+	private static boolean gameover() 
+	{
+		int rgb = img.getRGB(480, 480);
+//		Color c = new Color(rgb);
+//		System.out.println("Invalid color: " + rgb + " (" + c.getRed() + ", " + c.getGreen() + ", " + c.getBlue() + ")");
+//		System.exit(1);
+		return rgb == -2766403;
+	}
+
 	private static void saveImg()
 	{
 		File outputfile = new File("image.jpg");
@@ -106,31 +145,31 @@ public class Main
 		switch(rgb)
 		{
 			case -1194689:
-				return 1024;
+				return 10;
 			case -1193904:
-				return 512;
+				return 9;
 			case -1192863:
-				return 256;
-			case -1192078:
-				return 128;
-			case -631237:
-				return 64;
-			case -623521:
-				return 32;
-			case -682653:
-				return 16;
-			case -872071:
 				return 8;
-			case -1187640:
+			case -1192078:
+				return 7;
+			case -631237:
+				return 6;
+			case -623521:
+				return 5;
+			case -682653:
 				return 4;
-			case -1121062:
+			case -872071:
+				return 3;
+			case -1187640:
 				return 2;
+			case -1121062:
+				return 1;
 			case -3358541:
 				return 0;
 			default:
 				Color c = new Color(rgb);
 				System.out.println("Invalid color: " + rgb + " (" + c.getRed() + ", " + c.getGreen() + ", " + c.getBlue() + ")  x: " + x + " y: " + y);
-				System.exit(1);
+				error = true;
 				return -1;
 		}
 		

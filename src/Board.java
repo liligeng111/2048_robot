@@ -4,6 +4,33 @@ public class Board
 	
 	private int[][] board;
 	private int depth;
+	private static final int[] standard = {200, 0, 4, 16, 48, 128, 320, 768, 1792, 4096, 9216, 20480};
+	private static final int MAX_DEPTH = 4;
+	private static int value[];
+	
+	public void setValue()
+	{
+		value = new int[12];
+		boolean[] has = new boolean[12];
+		
+		for (int i = 0; i < 4; i++)
+		{
+			for (int j = 0; j < 4; j++)
+			{
+				has[board[i][j]] = true;
+			}
+		}
+		
+		for (int i = 0; i < 12; i++)
+		{
+			value[i] = standard[i];
+			if (!has[i])
+			{
+				value[i] *= 2;
+				//System.out.println(i);
+			}
+		}
+	}
 	
 	public Board(int d)
 	{
@@ -18,6 +45,9 @@ public class Board
 	
 	public void print()
 	{
+		for (int i = 0; i < 12; i++)
+			System.out.print(value[i] + " ");
+		System.out.println();
 		for(int i = 0; i < 4; i++)
 		{
 			for(int j = 0; j < 4; j++)
@@ -46,7 +76,7 @@ public class Board
 	{
 		int count = count();
 		
-		if (count > 6)
+		if (count > 8)
 		{
 			return score();
 		}
@@ -57,8 +87,8 @@ public class Board
 			System.exit(1);
 		}
 		
-		//double total = 0;
-		double min = 30000;
+		double total = 0;
+//		double min = Double.MAX_VALUE;
 		for (int i = 0; i < 4; i++)
 		{
 			for (int j = 0; j < 4; j++)
@@ -67,15 +97,15 @@ public class Board
 				{
 					Board c = copy();
 					c.board[i][j] = 2;
-//					total += c.score();
-					double score = c.score();
-					min = min > score ? score : min;
+					total += c.score();
+//					double score = c.score();
+//					min = min > score ? score : min;
 				}
 			}
 		}
 		
-//		return total / count;
-		return min;
+		return total / count;
+//		return min;
 	}
 	
 	private int count()
@@ -96,11 +126,10 @@ public class Board
 	public double score()	
 	{
 		
-		if (depth == 0) return sum();
 		
 	
 		Board[] moves = {left(), right(), up(), down()};		
-		double max = -150000;
+		double max = -4 * sum();
 		
 		
 		//moves[3].print();
@@ -110,7 +139,17 @@ public class Board
 		{	
 			if (moves[i] == null)
 				continue;
-			double score = moves[i].add2Score();
+			double score;
+			
+			if (depth == MAX_DEPTH) 
+			{
+				score = moves[i].sum();
+			}
+			else
+			{
+				score = moves[i].add2Score();
+			}
+			
 			if (score > max)
 			{
 				max = score;
@@ -120,21 +159,6 @@ public class Board
 		return max;
 	}
 	
-	/*private double curve(int s) 
-	{
-		switch(s)
-		{
-			case 0: return -1;
-			case 1: return 7;
-			case 2: return 13;
-			case 3: return 18;
-			case 4: return 22;
-			case 5: return 25;
-			case 6: return 27;
-			default: return 21 + s;
-		}
-	}*/
-
 	private double sum() 
 	{
 		int s = 0;
@@ -142,49 +166,11 @@ public class Board
 		{
 			for(int j = 0; j < 4; j++)
 			{
-				switch(board[i][j])
-				{
-					case 0: 
-						break;
-					case 2:
-						break;
-					case 4:
-						s += 4;
-						break;
-					case 8:
-						s += 16;
-						break;
-					case 16:
-						s += 48;
-						break;
-					case 32:
-						s += 128;
-						break;
-					case 64:
-						s += 320; 
-						break;
-					case 128:
-						s += 768; 
-						break;
-					case 256:
-						s += 1792; 
-						break;
-					case 512:
-						s += 4096; 
-						break;
-					case 1024:
-						s += 9216; 
-						break;
-					case 2048:
-						s += 20480; 
-						break;
-					default:
-					    System.out.println("....");
-					    System.exit(1);
-				}
-				//s += Math.pow(board[i][j], 1.5);
+				s += value[board[i][j]];	
+				//System.out.print(s + " ");
 			}
 		}
+		//System.out.println();
 		return s;
 	}
 
@@ -208,8 +194,8 @@ public class Board
 				max = score;
 				move = i;
 			}
-			//System.out.println(i + " : " + score);
-			//moves[i].print();
+//			System.out.println(i + " : " + score);
+//			moves[i].print();
 		}
 		
 		return move;
@@ -240,7 +226,7 @@ public class Board
 	{
 		boolean movable = false;
 		
-		Board r = new Board(depth - 1);
+		Board r = new Board(depth + 1);
 		for(int j = 0; j < 4; j++)
 		{
 			int offset = 0;
@@ -253,7 +239,11 @@ public class Board
 				}
 				else if (i - offset > 0 && board[i][j] == r.board[i - offset - 1][j] && board[i][j] == board[i - 1][j])
 				{
-					r.board[i - offset - 1][j] *= 2;
+					r.board[i - offset - 1][j] += 1;
+					if (depth == 0 && r.board[i - offset - 1][j] == 11)
+					{
+						System.exit(0);
+					}
 					offset++;
 					movable = true;
 				}
